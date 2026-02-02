@@ -1,0 +1,25 @@
+services:
+  api-consulting1:
+    image: api-consulting:latest
+    container_name: api-consulting1
+    volumes:
+      - ./app:/app
+    command: gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --timeout 90 --bind 0.0.0.0:8000 main:app
+    ports:
+      - "8000:8000"
+    environment:
+      - TZ=Asia/Seoul
+    env_file:
+      - ./.env/local/.env
+  api-consulting2:
+    image: api-consulting:latest
+    container_name: api-consulting2
+    volumes:
+      - ./app:/app
+    command: gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --timeout 90 --bind 0.0.0.0:8000 main:app
+    ports:
+      - "8001:8000"
+    environment:
+      - TZ=Asia/Seoul
+    env_file:
+      - ./.env/local/.env
