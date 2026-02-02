@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 
+from router import router
+
 app = FastAPI(
     title="AI 재무 컨설팅 서비스",
     summary="AI 재무 컨설팅 서비스",
     version="1.0.0",
 )
+
+app.include_router(router)
 
 @app.get(
     "/",
