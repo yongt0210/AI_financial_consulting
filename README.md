@@ -1,2 +1,2 @@
-# AI_financial_consulting
-구글 Gemini를 사용한 AI 재무 컨설팅
+# AI기반 재무컨설팅 및 포트폴리오 분석 서비스
+구글 Gemini를 사용한 LLM 기반의 개인 맞춤형 재무 서비스
