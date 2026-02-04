@@ -1,0 +1,1 @@
+from service.gemini_chat import ai_finance_consulting
