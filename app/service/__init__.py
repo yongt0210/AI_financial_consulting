@@ -1,1 +1,1 @@
-from service.gemini_chat import ai_finance_consulting
+from service.gemini_chat import gemini_consulting

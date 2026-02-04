@@ -60,7 +60,7 @@
             let div = addMessage("", "bot-msg");
 
             isSearching = true;
-            const url = `/chat/response?question=${encodeURIComponent(text)}`;
+            const url = `/chat/eventstream/response?question=${encodeURIComponent(text)}`;
             eventSource = new EventSource(url);
 
             eventSource.addEventListener("stream", (event) => {
