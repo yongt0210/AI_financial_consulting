@@ -1,4 +1,8 @@
-from fastapi import APIRouter, WebSocket
+import json
+import uuid
+import traceback
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 
 from lib.templates import templates
@@ -25,36 +29,33 @@ async def get_chat_response(question: str):
 """
 컨설팅 WebSocket
 """
-# 대화 히스토리를 저장할 딕셔너리 (추후 DB로 변경 예정)
-chat_sessions = {}
-
 @router.get("/ws")
 async def get_chat_websocket():
-    return templates.TemplateResponse("chat_socket.html", {"request": {}})
+    return templates.TemplateResponse("chat_socket.html", {"request": {}, "session_id": str(uuid.uuid4())})
 
 @router.websocket("/ws/response/{session_id}")
 async def websocket_chat_endpoint(websocket: WebSocket, session_id: str):
     await websocket.accept()
 
-    # 세션별로 대화 시작
-    if session_id not in chat_sessions:
-        chat_sessions[session_id] = []
+    try:
+        while True:
+            question = await websocket.receive_text()
 
-    chat_session = chat_sessions[session_id]
+            async for text_chunk in gemini_consulting.generate_chat_response(session_id, question=question):
+                await websocket.send_json({
+                    "type": "stream",
+                    "text": text_chunk
+                })
 
-
-
-
-# @router.get("/ws")
-# async def chat_endpoint(websocket: WebSocket):
-#     await websocket.accept()
-
-#     chat = client.chat.create
-
-#     try:
-#     except WebSocketDisconnect:
-#         print("WebSocket disconnected")
-#     except Exception as e:
-#         print(f"Error: {e}")
-
-#     pass
+            await websocket.send_json({
+                "type": "end",
+                "text": "Connection closed"
+            })
+    except WebSocketDisconnect:
+        print("웹소켓 종료")
+    except Exception as e:
+        print(f"에러 발생: {str(e)}")
+        await websocket.send_json({
+            "type": "error",
+            "text": f"{str(e)}\n{traceback.format_exc()}"
+        })

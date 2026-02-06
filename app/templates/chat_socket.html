@@ -23,66 +23,70 @@
         <div id="messages">
         </div>
         <div class="input-area">
-            <input type="text" id="inputMessage" placeholder="예: 사회초년생 월급 관리법 알려줘" onkeypress="handleKeyPress(event)">
+            <input type="text" id="inputMessage" placeholder="예: 사회초년생 월급 관리법 알려줘" onkeypress="handleKeyPress(event)" value="사회초년생이 월급 관리하는 방법을 알려줘.">
             <button onclick="sendMessage()">전송</button>
         </div>
     </div>
 
-    <script type="module">
+    <script>
+    let messagesDiv = document.getElementById('messages');
+    let input = document.getElementById("inputMessage");
     let ws;
-    let heartbeatInterval;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const session_id = '{{ session_id }}';
 
-    let wsUrl = `${protocol}://${window.location.host}/ws`;
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+
+    let wsUrl = `${protocol}://${window.location.host}/chat/ws/response/${session_id}`;
+
+    function connect(){
+        ws = new WebSocket(wsUrl);
+    }
+
     ws = new WebSocket(wsUrl);
 
-    let messagesDiv = document.getElementById('messages');
-    let currentBotDiv = null; // 현재 응답을 받고 있는 말풍선
+    const addMessage = (text, className) => {
+        let div = document.createElement('div');
+        div.className = `message ${className}`;
+        div.innerText = text;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        return div;
+    }
 
     ws.onopen = () => {
         console.log("WebSocket 연결 성공");
-        setSystemMessage("반갑습니다. 전문 재테크 컨설턴트입니다.\n현재 자산 상황이나 투자 고민을 말씀해 주시면 도움을 드리겠습니다.");
+        addMessage("반갑습니다. 전문 재테크 컨설턴트입니다.\n현재 자산 상황이나 투자 고민을 말씀해 주시면 도움을 드리겠습니다.", "bot-msg");
     }
 
     ws.onmessage = (event) => {
-        let msg = event.data;
-        if (msg === "[DONE]") {
-            currentBotDiv = null; // 응답 완료 시 초기화
-        } else {
-            if (currentBotDiv === null) {
-                // 새로운 봇 메시지 말풍선 생성
-                currentBotDiv = document.createElement('div');
-                currentBotDiv.className = 'message bot-msg';
-                messagesDiv.appendChild(currentBotDiv);
-            }
-            // 텍스트 스트리밍 추가 (줄바꿈 처리 포함)
-            currentBotDiv.innerHTML += msg.replace(/\n/g, "<br>");
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        const data = JSON.parse(event.data);
+
+        const div = addMessage("", "bot-msg");
+
+        if(data.type == "stream"){
+            div.innerText += data.text;
         }
+
+        console.log(data);
     };
 
     ws.onclose = () => {
-        setSystemMessage("서버와의 연결이 종료되었습니다. 새로고침하여 다시 시도해주세요.");
+        console.log("서버 연결 종료")
+        addMessage("서버와의 연결이 종료되었습니다.", "bot-msg");
     }
 
-    const setSystemMessage = (text) => {
-        let div = document.createElement('div');
-        div.className = 'message bot-msg';
-        div.innerText = text;
-        messagesDiv.appendChild(div);
+    ws.onerror = (error) => {
+        console.error("WebSocket 오류:", error);
+        addMessage("서버와의 연결이 종료되었습니다.", "bot-msg");
     }
 
     const sendMessage = () => {
-        let input = document.getElementById("inputMessage");
         let text = input.value.trim();
         if(text !== "") {
             // 사용자 메시지 추가
-            let userDiv = document.createElement('div');
-            userDiv.className = 'message user-msg';
-            userDiv.innerText = text;
-            messagesDiv.appendChild(userDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            addMessage(text, "user-msg");
 
             // 서버 전송
             ws.send(text);
