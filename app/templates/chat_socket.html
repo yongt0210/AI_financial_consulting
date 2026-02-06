@@ -29,11 +29,12 @@
     </div>
 
     <script>
-    let messagesDiv = document.getElementById('messages');
-    let input = document.getElementById("inputMessage");
-    let ws;
+    let messagesDiv = document.getElementById('messages'); // 전체 메시지 표시 영역
+    let input = document.getElementById("inputMessage"); // 입력 창
+    let ws; // 웹소켓 객체
+    let botDiv; // ai 컨설팅 메시지 DIV
 
-    const session_id = '{{ session_id }}';
+    const session_id = '{{ session_id }}'; // 임시로 만든 세션ID
 
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
@@ -63,10 +64,14 @@
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
-        const div = addMessage("", "bot-msg");
+        if(!botDiv){
+            botDiv = addMessage("", "bot-msg");
+        }
 
         if(data.type == "stream"){
-            div.innerText += data.text;
+            botDiv.innerText += data.text;
+        }else if(data.type == "end"){
+            botDiv = null;
         }
 
         console.log(data);
