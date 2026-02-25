@@ -18,7 +18,7 @@ app.include_router(router)
     tags=["main"],
 )
 def get_health_check() -> str:
-    return "health check"
+    return "consulting health check"
 
 if __name__ == "__main__":
     import uvicorn

@@ -6,7 +6,7 @@ services:
       - ./app:/app
     command: gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --timeout 90 --bind 0.0.0.0:8000 main:app
     ports:
-      - "8000:8000"
+      - "7000:8000"
     environment:
       - TZ=Asia/Seoul
     env_file:
@@ -18,7 +18,7 @@ services:
       - ./app:/app
     command: gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --timeout 90 --bind 0.0.0.0:8000 main:app
     ports:
-      - "8001:8000"
+      - "7001:8000"
     environment:
       - TZ=Asia/Seoul
     env_file:

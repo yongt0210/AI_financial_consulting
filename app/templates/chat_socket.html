@@ -68,13 +68,14 @@
             botDiv = addMessage("", "bot-msg");
         }
 
+        // stream 시 botDiv에 전달받은 텍스트 추가
         if(data.type == "stream"){
             botDiv.innerText += data.text;
-        }else if(data.type == "end"){
+        }
+        // 종료 시 botDiv 초기화
+        else if(data.type == "end"){
             botDiv = null;
         }
-
-        console.log(data);
     };
 
     ws.onclose = () => {
