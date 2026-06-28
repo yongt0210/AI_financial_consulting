@@ -1,18 +1,90 @@
 import json
 
-from fastapi import  WebSocket
+from fastapi import WebSocket
 from google.genai import types
 
 from lib.gemini import genai_client as client
-from lib.prompt import SYSTEM_INSTRUCTION
+from lib.prompt import CONSULT_INSTRUCTION, PENSION_INSTRUCTION
+
+from config import survey_list
+from schema import assetData, portfolioResult
 
 class GeminiConsulting:
     def __init__(self):
         self.client = client
-        self.model = "gemini-2.5-flash"
+        self.model = "gemini-2.5-flash-lite"
 
         # 세션 관리를 위한 딕셔너리(추후 DB로 변경 예정)
         self.sessions = {}
+
+    # DC형 퇴직연금 상담 결과
+    async def ai_dc_pension_consulting(self, data: assetData):
+        result = {
+            "code": 200
+            , "result": {}
+        }
+
+        try:
+            # 기본정보
+            base_info = data.base
+            answer = f"""
+# 기본정보
+## 나이: {base_info.age}세
+## 성별: {base_info.sex}
+## 총 자산: {base_info.wealth}
+## 소득: {base_info.income}
+"""
+            # 퇴직연금
+            answer_list = data.answers
+
+            for i, survey in enumerate(survey_list):
+                answer += f"""
+# 카테고리: {survey.get('category')}"""
+
+                question_list = survey.get("list")
+
+                for j, question in enumerate(question_list):
+                    q = question.get("question")
+                    a_int = answer_list[i][j]
+                    a = question.get("answer")[a_int]
+
+                    answer += f"""
+## 질문{j+1}: {q}
+## 응답{j+1}: {a}
+"""
+                answer += """
+            """
+
+            # 기타
+            if data.etc:
+                answer += f"""
+# 그 외 하고싶은 말: {data.etc}
+"""
+
+            prompt = f"""
+아래 질의응답문을 토대로 퇴직연금 포트폴리오를 추천해주세요.
+{answer}
+"""
+
+            response = client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=PENSION_INSTRUCTION,
+                    temperature=0.4, # 창의성 조절
+                    response_mime_type="application/json",
+                    response_schema=portfolioResult,
+                )
+            )
+
+            result["result"] = json.loads(response.text)
+        except Exception as e:
+            result = {
+                "code": 500,
+                "error": str(e)
+            }
+
+        return result
 
     async def ai_finance_consulting(self, question: str):
         """
@@ -23,7 +95,7 @@ class GeminiConsulting:
                 model=self.model,
                 contents=question,
                 config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_INSTRUCTION,
+                    system_instruction=CONSULT_INSTRUCTION,
                     temperature=0.7, # 창의성 조절
                 )
             )
@@ -47,7 +119,7 @@ class GeminiConsulting:
             self.sessions[session_id] = self.client.aio.chats.create(
                 model=self.model,
                 config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_INSTRUCTION
+                    system_instruction=CONSULT_INSTRUCTION
                 )
             )
         return self.sessions[session_id]

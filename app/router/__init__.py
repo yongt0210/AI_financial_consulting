@@ -2,15 +2,37 @@ import json
 import uuid
 import traceback
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import StreamingResponse
 
 from lib.templates import templates
 from service import gemini_consulting
 
+from config import survey_list
+from schema import assetData
+
 router = APIRouter(
     prefix="/chat"
 )
+
+"""
+DC형 퇴직연금
+"""
+@router.get("/dc")
+async def get_dc_consult(request: Request):
+    return templates.TemplateResponse(
+        "dc.html",
+        {
+            "request": request,
+            "survey_list": survey_list      # 3. Jinja2에서 루프를 돌릴 데이터를 최상단 키로 전달
+        }
+    )
+
+@router.post("/dc/data")
+async def get_dc_consult_data(
+    data: assetData,
+):
+    return await gemini_consulting.ai_dc_pension_consulting(data=data)
 
 """
 컨설팅 eventStream
